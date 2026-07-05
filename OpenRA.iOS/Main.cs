@@ -28,6 +28,11 @@ namespace OpenRA.iOS
 			// Native symbol resolution must be in place before anything touches SDL, Lua, or ANGLE
 			NativeLibraries.Initialize();
 
+			// Lock to landscape before SDL creates its UIKit app delegate and root view
+			// controller: OpenRA renders a fixed-size landscape surface and cannot reflow
+			// to portrait, so the view controller must never rotate the app there.
+			SDL.SDL_SetHint("SDL_IOS_ORIENTATIONS", "LandscapeLeft LandscapeRight");
+
 			// SDL owns UIApplicationMain and its delegate: it invokes GameMain on the
 			// UIKit main thread once the application has finished launching, which keeps
 			// the launch watchdog happy and lets SDL_PollEvent pump the UIKit run loop.
@@ -46,7 +51,13 @@ namespace OpenRA.iOS
 
 			IOSAppEnvironment.ExcludeContentFromBackup();
 
-			return (int)Game.InitializeAndRun(["Game.Mod=ra"]);
+			var result = (int)Game.InitializeAndRun(["Game.Mod=ra"]);
+
+			// SDL keeps the UIKit run loop alive after the game loop exits, so the
+			// process would linger with a torn-down game. Terminate so the in-game
+			// Quit button actually closes the app.
+			Environment.Exit(result);
+			return result;
 		}
 	}
 
