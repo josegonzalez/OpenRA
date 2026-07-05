@@ -41,6 +41,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Loose icon PNGs referenced from Info.plist, avoiding actool -->
+    <BundleResource Include="Resources/AppIcon*.png" Link="%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="../OpenRA.Game/OpenRA.Game.csproj" />
     <ProjectReference Include="../OpenRA.Mods.Common/OpenRA.Mods.Common.csproj" />
     <ProjectReference Include="../OpenRA.Mods.Cnc/OpenRA.Mods.Cnc.csproj" />
