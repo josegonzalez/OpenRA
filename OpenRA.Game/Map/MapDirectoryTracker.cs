@@ -33,7 +33,17 @@ namespace OpenRA
 			this.package = package;
 			this.classification = classification;
 
-			watcher = new FileSystemWatcher(package.Name);
+			try
+			{
+				watcher = new FileSystemWatcher(package.Name);
+			}
+			catch (PlatformNotSupportedException)
+			{
+				// Not all platforms (e.g. iOS) can watch the filesystem.
+				// Changed map directories are picked up on the next launch instead.
+				return;
+			}
+
 			watcher.Changed += (_, e) => AddMapAction(MapAction.Update, e.FullPath);
 			watcher.Created += (_, e) => AddMapAction(MapAction.Add, e.FullPath);
 			watcher.Deleted += (_, e) => AddMapAction(MapAction.Delete, e.FullPath);
@@ -45,7 +55,7 @@ namespace OpenRA
 
 		public void Dispose()
 		{
-			watcher.Dispose();
+			watcher?.Dispose();
 		}
 
 		void AddMapAction(MapAction mapAction, string fullpath, string oldFullPath = null)
