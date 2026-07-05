@@ -131,7 +131,13 @@ namespace OpenRA.Mods.Common.Orders
 		{
 			var actionButton = gameSettings.ResolveActionButton(MouseActionType.PlaceBuilding);
 			var cancelButton = gameSettings.ResolveCancelButton(MouseActionType.PlaceBuilding);
-			if ((mi.Button == actionButton && mi.Event == MouseInputEvent.Down) || (mi.Button == cancelButton && mi.Event == MouseInputEvent.Up))
+
+			// Touch drags move the building preview with the finger, so placement
+			// must not be confirmed until the finger is released.
+			var confirmEvent = gameSettings.MouseControlStyle == MouseControlStyle.Touch
+				? MouseInputEvent.Up : MouseInputEvent.Down;
+
+			if ((mi.Button == actionButton && mi.Event == confirmEvent) || (mi.Button == cancelButton && mi.Event == MouseInputEvent.Up))
 			{
 				if (mi.Button == cancelButton)
 					world.CancelInputMode();

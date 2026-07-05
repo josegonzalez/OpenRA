@@ -114,6 +114,10 @@ namespace OpenRA.Platforms.Default
 					case SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN:
 					case SDL.SDL_EventType.SDL_MOUSEBUTTONUP:
 					{
+						// Touch input is handled through the gesture recognizer instead of SDL's mouse synthesis
+						if (e.button.which == SDL.SDL_TOUCH_MOUSEID && Game.Settings.Game.UseTouchInput)
+							break;
+
 						// Mouse 1, Mouse 2 and Mouse 3 are handled as mouse inputs
 						// Mouse 4 and Mouse 5 are treated as (pseudo) keyboard inputs
 						if (e.button.button == SDL.SDL_BUTTON_LEFT ||
@@ -180,6 +184,9 @@ namespace OpenRA.Platforms.Default
 
 					case SDL.SDL_EventType.SDL_MOUSEMOTION:
 					{
+						if (e.motion.which == SDL.SDL_TOUCH_MOUSEID && Game.Settings.Game.UseTouchInput)
+							break;
+
 						var mousePos = new int2(e.motion.x, e.motion.y);
 						var input = lockedMousePosition ?? mousePos;
 						var pos = EventPosition(device, input.X, input.Y);
@@ -201,6 +208,28 @@ namespace OpenRA.Platforms.Default
 						var pos = EventPosition(device, x, y);
 						inputHandler.OnMouseInput(new MouseInput(MouseInputEvent.Scroll, MouseButton.None, pos, new int2(0, e.wheel.y), mods, 0));
 
+						break;
+					}
+
+					case SDL.SDL_EventType.SDL_FINGERDOWN:
+					case SDL.SDL_EventType.SDL_FINGERUP:
+					case SDL.SDL_EventType.SDL_FINGERMOTION:
+					{
+						if (pendingMotion != null)
+						{
+							inputHandler.OnMouseInput(pendingMotion.Value);
+							pendingMotion = null;
+						}
+
+						// Finger coordinates are normalized over the window
+						var size = device.EffectiveWindowSize;
+						var pos = new int2((int)(e.tfinger.x * size.Width), (int)(e.tfinger.y * size.Height));
+						var delta = new int2((int)(e.tfinger.dx * size.Width), (int)(e.tfinger.dy * size.Height));
+						var touchEvent = e.type == SDL.SDL_EventType.SDL_FINGERDOWN ? TouchInputEvent.Down
+							: e.type == SDL.SDL_EventType.SDL_FINGERUP ? TouchInputEvent.Up
+							: TouchInputEvent.Move;
+
+						inputHandler.OnTouchInput(new TouchInput(touchEvent, e.tfinger.fingerId, pos, delta, mods));
 						break;
 					}
 

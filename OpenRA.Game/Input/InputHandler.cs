@@ -49,5 +49,11 @@ namespace OpenRA
 		{
 			Sync.RunUnsynced(world, () => Ui.HandleInput(input));
 		}
+
+		public void OnTouchInput(TouchInput input)
+		{
+			// The recognizer synthesizes mouse events back through OnMouseInput
+			Game.TouchGestures.Process(input, Game.RunTime, this);
+		}
 	}
 }

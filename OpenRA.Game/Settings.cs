@@ -20,7 +20,7 @@ using OpenRA.Primitives;
 
 namespace OpenRA
 {
-	public enum MouseControlStyle { Classic, Modern, OtherRTS }
+	public enum MouseControlStyle { Classic, Modern, OtherRTS, Touch }
 	public enum MouseScrollType { Disabled, Standard, Inverted, Joystick }
 	public enum StatusBarsType { Standard, DamageShow, AlwaysShow }
 	public enum TargetLinesType { Disabled, Manual, Automatic }
@@ -325,6 +325,15 @@ namespace OpenRA
 		public bool LockMouseWindow = false;
 		public MouseControlStyle MouseControlStyle = MouseControlStyle.Modern;
 		public MouseScrollType MouseScroll = MouseScrollType.Joystick;
+
+		[Desc("Translate touch events into gestures instead of treating them as mouse input.")]
+		public bool UseTouchInput = false;
+
+		[Desc("Time in milliseconds a touch must be held before it becomes a contextual (right-click) action.")]
+		public int TouchLongPressDelay = 500;
+
+		[Desc("Version of the touch device defaults that were last applied to these settings.")]
+		public int TouchDefaultsVersion = 0;
 		public float ViewportEdgeScrollStep = 30f;
 		public float UIScrollSpeed = 50f;
 		public float ZoomSpeed = 0.04f;
@@ -360,8 +369,16 @@ namespace OpenRA
 
 		public TextNotificationPoolFilters TextNotificationPoolFilters = TextNotificationPoolFilters.Feedback | TextNotificationPoolFilters.Transients;
 
+		/// <summary>True when selecting and ordering share the left button (Classic style and touch taps).</summary>
+		public bool LeftClickOrders => MouseControlStyle is MouseControlStyle.Classic or MouseControlStyle.Touch;
+
 		public MouseButton ResolveActionButton(MouseActionType actionType)
 		{
+			// Touch has a single physical action: every action type maps to the left button,
+			// while the synthesized right-click (long-press) resolves to cancel/deselect.
+			if (MouseControlStyle == MouseControlStyle.Touch)
+				return MouseButton.Left;
+
 			switch (actionType)
 			{
 				case MouseActionType.ConfirmOrder:

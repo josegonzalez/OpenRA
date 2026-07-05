@@ -20,10 +20,18 @@ namespace OpenRA
 		void OnKeyInput(KeyInput input);
 		void OnMouseInput(MouseInput input);
 		void OnTextInput(string text);
+
+		/// <summary>Raw touch events, delivered only by platforms with a touchscreen. Ignored by default.</summary>
+		void OnTouchInput(TouchInput input) { }
 	}
 
 	public enum MouseInputEvent { Down, Move, Up, Scroll }
 	public record struct MouseInput(MouseInputEvent Event, MouseButton Button, int2 Location, int2 Delta, Modifiers Modifiers, int MultiTapCount);
+
+	public enum TouchInputEvent { Down, Move, Up, Cancel }
+
+	/// <summary>A raw finger contact. Location and Delta are in effective window coordinates.</summary>
+	public record struct TouchInput(TouchInputEvent Event, long FingerId, int2 Location, int2 Delta, Modifiers Modifiers);
 
 	[Flags]
 	public enum MouseButton

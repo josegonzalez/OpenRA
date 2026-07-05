@@ -108,7 +108,8 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 			var mouseControlDropdown = widget.Get<DropDownButtonWidget>("MOUSE_CONTROL_DROPDOWN");
 			mouseControlDropdown.OnMouseDown = _ => InputSettingsLogic.ShowMouseControlDropdown(mouseControlDropdown, controlTypes, gameSettings);
-			mouseControlDropdown.GetText = () => controlTypes[gameSettings.MouseControlStyle];
+			mouseControlDropdown.GetText = () =>
+				controlTypes.TryGetValue(gameSettings.MouseControlStyle, out var label) ? label : gameSettings.MouseControlStyle.ToString();
 
 			foreach (var container in new[] { mouseControlDescClassic, mouseControlDescModern, mouseControlDescOtherRTS })
 			{

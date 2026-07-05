@@ -55,6 +55,9 @@ namespace OpenRA
 		public static Renderer Renderer;
 		public static Sound Sound;
 
+		public static readonly TouchGestureRecognizer TouchGestures =
+			new(() => Settings != null ? Settings.Game.TouchLongPressDelay : 500);
+
 		public static string EngineVersion { get; private set; }
 		public static LocalPlayerProfile LocalPlayerProfile;
 
@@ -778,8 +781,11 @@ namespace OpenRA
 					}
 				}
 
+				var inputHandler = new DefaultInputHandler(OrderManager.World);
+				TouchGestures.Tick(RunTime, inputHandler);
+
 				using (new PerfSample("render_flip"))
-					Renderer.EndFrame(new DefaultInputHandler(OrderManager.World));
+					Renderer.EndFrame(inputHandler);
 
 				if (takeScreenshot)
 				{

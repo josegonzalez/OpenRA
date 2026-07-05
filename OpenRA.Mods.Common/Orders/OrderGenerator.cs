@@ -32,7 +32,12 @@ namespace OpenRA.Mods.Common.Orders
 
 		public virtual IEnumerable<Order> Order(World world, CPos cell, int2 worldPixel, MouseInput mi)
 		{
-			if (mi.Button == ActionButton && mi.Event == MouseInputEvent.Down)
+			// Touch drags show a preview that tracks the finger, so the order
+			// must not be confirmed until the finger is released.
+			var confirmEvent = gameSettings.MouseControlStyle == MouseControlStyle.Touch
+				? MouseInputEvent.Up : MouseInputEvent.Down;
+
+			if (mi.Button == ActionButton && mi.Event == confirmEvent)
 				return OrderInner(world, cell, worldPixel, mi);
 
 			if (mi.Button == CancelButton && mi.Event == MouseInputEvent.Up)
