@@ -1,0 +1,23 @@
+<Project>
+  <!--
+    Game data lands at the bundle root, which is also AppDomain.BaseDirectory:
+    Platform.BinDir == Platform.EngineDir == the bundle, so the engine finds
+    mods/, glsl/, and VERSION without any path overrides.
+  -->
+  <ItemGroup>
+    <BundleResource Include="../VERSION" Link="VERSION" />
+    <BundleResource Include="../global mix database.dat" Link="global mix database.dat" />
+    <BundleResource Include="../IP2LOCATION-LITE-DB1.IPV6.BIN.ZIP" Condition="Exists('../IP2LOCATION-LITE-DB1.IPV6.BIN.ZIP')" Link="IP2LOCATION-LITE-DB1.IPV6.BIN.ZIP" />
+
+    <BundleResource Include="../glsl/**/*.*" Link="glsl/%(RecursiveDir)%(Filename)%(Extension)" />
+
+    <BundleResource Include="../mods/common/**/*.*" Link="mods/common/%(RecursiveDir)%(Filename)%(Extension)" />
+    <BundleResource Include="../mods/common-content/**/*.*" Link="mods/common-content/%(RecursiveDir)%(Filename)%(Extension)" />
+    <BundleResource Include="../mods/ra/**/*.*" Link="mods/ra/%(RecursiveDir)%(Filename)%(Extension)" />
+    <BundleResource Include="../mods/ra-content/**/*.*" Link="mods/ra-content/%(RecursiveDir)%(Filename)%(Extension)" />
+    <BundleResource Include="../mods/cnc/**/*.*" Link="mods/cnc/%(RecursiveDir)%(Filename)%(Extension)" />
+    <BundleResource Include="../mods/cnc-content/**/*.*" Link="mods/cnc-content/%(RecursiveDir)%(Filename)%(Extension)" />
+    <BundleResource Include="../mods/d2k/**/*.*" Link="mods/d2k/%(RecursiveDir)%(Filename)%(Extension)" />
+    <BundleResource Include="../mods/d2k-content/**/*.*" Link="mods/d2k-content/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

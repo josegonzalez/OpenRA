@@ -131,6 +131,16 @@ test: all
 	@./utility.sh ra-content --check-yaml
 	@./utility.sh ra --check-yaml
 
+ios:
+	@command -v xcrun > /dev/null || (echo "iOS builds require Xcode."; exit 1)
+	@$(DOTNET) workload list | grep -q "^ios " || (echo "iOS builds require the iOS workload: dotnet workload install ios"; exit 1)
+	@$(DOTNET) build OpenRA.iOS/OpenRA.iOS.csproj -c Release -r ios-arm64 --nologo
+
+ios-simulator:
+	@command -v xcrun > /dev/null || (echo "iOS builds require Xcode."; exit 1)
+	@$(DOTNET) workload list | grep -q "^ios " || (echo "iOS builds require the iOS workload: dotnet workload install ios"; exit 1)
+	@$(DOTNET) build OpenRA.iOS/OpenRA.iOS.csproj -c Debug -r iossimulator-arm64 --nologo
+
 tests:
 	@dotnet build OpenRA.Test/OpenRA.Test.csproj -c Debug --nologo -p:TargetPlatform=$(TARGETPLATFORM)
 	@echo
@@ -190,4 +200,4 @@ help:
 
 .SUFFIXES:
 
-.PHONY: all clean check check-scripts test version install install-linux-shortcuts install-linux-appdata install-man help
+.PHONY: all clean check check-scripts test version install install-linux-shortcuts install-linux-appdata install-man help ios ios-simulator

@@ -50,3 +50,7 @@ update.log
 
 # IntelliJ files
 .idea
+
+# iOS native dependency build artifacts
+packaging/ios/native/
+packaging/ios/build/

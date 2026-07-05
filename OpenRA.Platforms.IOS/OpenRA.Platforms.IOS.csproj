@@ -3,6 +3,11 @@
     <TargetFramework>net10.0-ios</TargetFramework>
     <SupportedOSPlatformVersion>17.0</SupportedOSPlatformVersion>
     <RootNamespace>OpenRA.Platforms.IOS</RootNamespace>
+
+    <!-- The OpenRA native binding packages inject desktop dylibs as content
+      when TargetPlatform names a desktop runtime; iOS links its own natives. -->
+    <TargetPlatform></TargetPlatform>
+
     <!-- Keep iOS build outputs out of the shared desktop bin directory -->
     <OutputPath>bin/</OutputPath>
     <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>

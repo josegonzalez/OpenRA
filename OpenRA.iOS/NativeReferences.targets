@@ -1,0 +1,41 @@
+<Project>
+  <!--
+    Native dependencies are built into xcframeworks by packaging/ios/build-native-deps.sh
+    and packaging/ios/fetch-angle.sh. The references are conditional so the managed build
+    still works before the native artifacts exist; the app only runs with all of them.
+  -->
+  <PropertyGroup>
+    <IOSNativeDir>$(MSBuildThisFileDirectory)../packaging/ios/native</IOSNativeDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Statically linked: full AOT turns DllImports into direct symbol references -->
+    <NativeReference Include="$(IOSNativeDir)/SDL2.xcframework" Condition="Exists('$(IOSNativeDir)/SDL2.xcframework')">
+      <Kind>Static</Kind>
+      <ForceLoad>true</ForceLoad>
+      <Frameworks>AVFoundation AudioToolbox CoreAudio CoreBluetooth CoreGraphics CoreHaptics CoreMotion Foundation GameController IOKit Metal OpenGLES QuartzCore UIKit</Frameworks>
+    </NativeReference>
+    <NativeReference Include="$(IOSNativeDir)/openal-soft.xcframework" Condition="Exists('$(IOSNativeDir)/openal-soft.xcframework')">
+      <Kind>Static</Kind>
+      <ForceLoad>true</ForceLoad>
+      <Frameworks>AudioToolbox CoreAudio AVFoundation</Frameworks>
+      <LinkerFlags>-lc++</LinkerFlags>
+    </NativeReference>
+    <NativeReference Include="$(IOSNativeDir)/freetype.xcframework" Condition="Exists('$(IOSNativeDir)/freetype.xcframework')">
+      <Kind>Static</Kind>
+      <ForceLoad>true</ForceLoad>
+    </NativeReference>
+    <NativeReference Include="$(IOSNativeDir)/lua51.xcframework" Condition="Exists('$(IOSNativeDir)/lua51.xcframework')">
+      <Kind>Static</Kind>
+      <ForceLoad>true</ForceLoad>
+    </NativeReference>
+
+    <!-- ANGLE ships as dynamic frameworks, embedded and signed with the app -->
+    <NativeReference Include="$(IOSNativeDir)/libEGL.xcframework" Condition="Exists('$(IOSNativeDir)/libEGL.xcframework')">
+      <Kind>Framework</Kind>
+    </NativeReference>
+    <NativeReference Include="$(IOSNativeDir)/libGLESv2.xcframework" Condition="Exists('$(IOSNativeDir)/libGLESv2.xcframework')">
+      <Kind>Framework</Kind>
+    </NativeReference>
+  </ItemGroup>
+</Project>
