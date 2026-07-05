@@ -34,7 +34,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		{
 			var bar = widget.Get("CONTROL_GROUPS_BAR");
 
-			var assignToggle = bar.Get<ButtonWidget>("ASSIGN_TOGGLE");
+			var assignToggle = widget.Get<ButtonWidget>("ASSIGN_TOGGLE");
 			var assignLabel = FluentProvider.GetMessage(Assign);
 			assignToggle.GetText = () => assignLabel;
 			assignToggle.IsHighlighted = () => assignMode;
@@ -48,7 +48,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				var button = template.Clone();
 				button.Id = "GROUP_" + groups[i];
 				button.Bounds = new WidgetBounds(
-					template.Bounds.X + assignToggle.Bounds.Width + 6 + i * (template.Bounds.Width + 6),
+					template.Bounds.X + i * (template.Bounds.Width + 4),
 					template.Bounds.Y, template.Bounds.Width, template.Bounds.Height);
 
 				var label = groups[i];

@@ -3,39 +3,39 @@ Container@TOUCH_CONTROLS:
 	Width: WINDOW_WIDTH
 	Height: WINDOW_HEIGHT
 	Children:
-		Container@CONTROL_GROUPS_BAR:
-			X: (WINDOW_WIDTH - WIDTH) / 2
-			Y: WINDOW_HEIGHT - 56
-			Width: 612
-			Height: 48
-			Children:
-				Button@ASSIGN_TOGGLE:
-					Width: 72
-					Height: 48
-					Font: Bold
-				Button@GROUP_TEMPLATE:
-					Width: 48
-					Height: 48
-					Font: Bold
-					Visible: false
-		Container@ZOOM_BUTTONS:
-			X: WINDOW_WIDTH - 56
+		Container@LEFT_ACTIONS:
+			X: 8
 			Y: (WINDOW_HEIGHT - HEIGHT) / 2
 			Width: 48
-			Height: 102
+			Height: 204
 			Children:
 				Button@ZOOM_IN_BUTTON:
 					Width: 48
 					Height: 48
 					Font: Bold
 				Button@ZOOM_OUT_BUTTON:
-					Y: 54
+					Y: 52
 					Width: 48
 					Height: 48
 					Font: Bold
-		Button@CHAT_BUTTON:
-			X: 8
-			Y: WINDOW_HEIGHT - 56
-			Width: 72
-			Height: 48
-			Font: Bold
+				Button@ASSIGN_TOGGLE:
+					Y: 104
+					Width: 48
+					Height: 48
+					Font: Bold
+				Button@CHAT_BUTTON:
+					Y: 156
+					Width: 48
+					Height: 48
+					Font: Bold
+		Container@CONTROL_GROUPS_BAR:
+			X: 360
+			Y: WINDOW_HEIGHT - 52
+			Width: 476
+			Height: 44
+			Children:
+				Button@GROUP_TEMPLATE:
+					Width: 44
+					Height: 44
+					Font: Bold
+					Visible: false

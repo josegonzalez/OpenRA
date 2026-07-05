@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using OpenRA.Mods.Common.FileSystem;
 using OpenRA.Network;
@@ -109,28 +110,28 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			{
 				var launchableMods = Game.Mods.Values
 					.Where(m => !m.Metadata.Hidden)
-					.OrderBy(m => m.Metadata.Title)
+					.Select(m => (Manifest: m, Title: ResolveModTitle(m)))
+					.OrderBy(m => m.Title)
 					.ToList();
 
 				var visible = Game.ExternalMods.Count == 0 && launchableMods.Count > 1;
 				modChooserButton.IsVisible = () => visible && menuType == MenuType.Main;
 
-				var currentTitle = modData.Manifest.Metadata.Title;
+				var currentTitle = modData.Manifest.Metadata.TitleTranslated;
 				modChooserButton.GetText = () => currentTitle;
 				modChooserButton.OnMouseDown = _ =>
 				{
-					ScrollItemWidget SetupItem(Manifest mod, ScrollItemWidget itemTemplate)
+					ScrollItemWidget SetupItem((Manifest Manifest, string Title) mod, ScrollItemWidget itemTemplate)
 					{
 						var item = ScrollItemWidget.Setup(itemTemplate,
-							() => mod.Id == modData.Manifest.Id,
+							() => mod.Manifest.Id == modData.Manifest.Id,
 							() =>
 							{
-								if (mod.Id != modData.Manifest.Id)
-									Game.SwitchToInternalMod(mod.Id);
+								if (mod.Manifest.Id != modData.Manifest.Id)
+									Game.SwitchToInternalMod(mod.Manifest.Id);
 							});
 
-						var title = mod.Metadata.Title;
-						item.Get<LabelWidget>("LABEL").GetText = () => title;
+						item.Get<LabelWidget>("LABEL").GetText = () => mod.Title;
 						return item;
 					}
 
@@ -598,6 +599,36 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			}
 
 			lastGameState = MenuPanel.None;
+		}
+
+		static string ResolveModTitle(Manifest mod)
+		{
+			// The title is a fluent key that resolves against the mod's own fluent
+			// files, which are not part of the active mod's bundle.
+			try
+			{
+				var text = new StringBuilder();
+				foreach (var path in mod.FluentMessages)
+				{
+					var split = path.IndexOf('|');
+					if (split <= 0 || path[..split] != mod.Id)
+						continue;
+
+					using (var stream = mod.Package.GetStream(path[(split + 1)..]))
+						if (stream != null)
+							text.AppendLine(stream.ReadAllText());
+				}
+
+				var bundle = new FluentBundle(mod.FluentCulture, text.ToString(), _ => { });
+				if (bundle.TryGetMessage(mod.Metadata.Title, out var title))
+					return title;
+			}
+			catch (Exception e)
+			{
+				Log.Write("debug", e);
+			}
+
+			return mod.Metadata.Title;
 		}
 	}
 }
