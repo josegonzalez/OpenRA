@@ -16,7 +16,7 @@ using System.Runtime.InteropServices;
 
 namespace OpenRA
 {
-	public enum PlatformType { Unknown, Windows, OSX, Linux }
+	public enum PlatformType { Unknown, Windows, OSX, Linux, IOS }
 
 	public enum SupportDirType { System, ModernUser, LegacyUser, User }
 
@@ -39,6 +39,10 @@ namespace OpenRA
 
 		static PlatformType GetCurrentPlatform()
 		{
+			// Must be checked before the uname probe below: sandboxed platforms cannot spawn processes
+			if (System.OperatingSystem.IsIOS())
+				return PlatformType.IOS;
+
 			if (Environment.OSVersion.Platform == PlatformID.Win32NT)
 				return PlatformType.Windows;
 
@@ -169,6 +173,17 @@ namespace OpenRA
 						"Library", "Application Support", "OpenRA") + Path.DirectorySeparatorChar;
 
 					systemSupportPath = "/Library/Application Support/OpenRA/";
+					break;
+				}
+
+				case PlatformType.IOS:
+				{
+					// The sandbox's Documents directory can be exposed to the user through the
+					// Files app (UIFileSharingEnabled), covering settings, logs, replays,
+					// saves, maps, and downloaded content. There is no shared system location.
+					modernUserSupportPath = legacyUserSupportPath = systemSupportPath = Path.Combine(
+						Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+						"OpenRA") + Path.DirectorySeparatorChar;
 					break;
 				}
 

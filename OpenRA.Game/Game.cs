@@ -458,8 +458,15 @@ namespace OpenRA
 			InitializeMod(manifest, args);
 		}
 
+		// Set by statically-linked hosts (e.g. iOS) before InitializeAndRun.
+		// Platform plugins cannot be loaded at runtime on those platforms.
+		public static Func<IPlatform> PlatformFactory;
+
 		public static IPlatform CreatePlatform(string platformName)
 		{
+			if (PlatformFactory != null)
+				return PlatformFactory();
+
 			var rendererPath = Path.Combine(Platform.BinDir, "OpenRA.Platforms." + platformName + ".dll");
 
 			var loader = new AssemblyLoader(rendererPath);
@@ -566,8 +573,30 @@ namespace OpenRA
 			return shellmap;
 		}
 
+		/// <summary>
+		/// Switch to another installed mod inside the current process.
+		/// Used instead of <see cref="SwitchToExternalMod"/> on platforms that cannot relaunch themselves.
+		/// </summary>
+		public static bool SwitchToInternalMod(string modId, Arguments args = null)
+		{
+			if (!Mods.TryGetValue(modId, out var manifest))
+				return false;
+
+			RunAfterTick(() => InitializeMod(manifest, args ?? Arguments.Empty));
+			return true;
+		}
+
 		public static void SwitchToExternalMod(ExternalMod mod, string[] launchArguments = null, Action onFailed = null)
 		{
+			// Sandboxed platforms cannot spawn a new process to switch mods
+			if (Platform.CurrentPlatform == PlatformType.IOS)
+			{
+				if (!SwitchToInternalMod(mod.Id, launchArguments != null ? new Arguments(launchArguments) : null))
+					onFailed?.Invoke();
+
+				return;
+			}
+
 			try
 			{
 				var path = mod.LaunchPath;

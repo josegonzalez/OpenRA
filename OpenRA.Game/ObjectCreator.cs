@@ -24,6 +24,15 @@ namespace OpenRA
 		// This tracks the assemblies that have been loaded since game start so that we don't load multiple copies
 		static readonly Dictionary<string, Assembly> ResolvedAssemblies = [];
 
+		// Statically-linked hosts (e.g. iOS) preregister their bundled assemblies because loading
+		// them again from disk is either unavailable or would bypass their ahead-of-time compiled images.
+		static readonly Dictionary<string, Assembly> PreregisteredAssemblies = new(StringComparer.OrdinalIgnoreCase);
+
+		public static void RegisterAssembly(Assembly assembly, string fileName = null)
+		{
+			PreregisteredAssemblies[fileName ?? assembly.GetName().Name + ".dll"] = assembly;
+		}
+
 		readonly Cache<string, Type> typeCache;
 		readonly Cache<Type, ConstructorInfo> ctorCache;
 		readonly (Assembly Assembly, string Namespace)[] assemblies;
@@ -45,6 +54,12 @@ namespace OpenRA
 
 		static void LoadAssembly(List<Assembly> assemblyList, string resolvedPath)
 		{
+			if (PreregisteredAssemblies.TryGetValue(Path.GetFileName(resolvedPath), out var preregistered))
+			{
+				assemblyList.Add(preregistered);
+				return;
+			}
+
 			// .NET doesn't provide any way of querying the metadata of an assembly without either:
 			//   (a) loading duplicate data into the application domain, breaking the world.
 			//   (b) crashing if the assembly has already been loaded.
