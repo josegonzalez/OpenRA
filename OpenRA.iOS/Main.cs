@@ -23,8 +23,14 @@ namespace OpenRA.iOS
 {
 	static class Program
 	{
+		static string[] launchArgs = [];
+
 		static int Main(string[] args)
 		{
+			// Process arguments (e.g. Launch.Connect for automated testing) are
+			// forwarded into the engine once SDL hands control back to GameMain
+			launchArgs = args;
+
 			// Native symbol resolution must be in place before anything touches SDL, Lua, or ANGLE
 			NativeLibraries.Initialize();
 
@@ -51,7 +57,7 @@ namespace OpenRA.iOS
 
 			IOSAppEnvironment.ExcludeContentFromBackup();
 
-			var result = (int)Game.InitializeAndRun(["Game.Mod=ra"]);
+			var result = (int)Game.InitializeAndRun(["Game.Mod=ra", .. launchArgs]);
 
 			// SDL keeps the UIKit run loop alive after the game loop exits, so the
 			// process would linger with a torn-down game. Terminate so the in-game
