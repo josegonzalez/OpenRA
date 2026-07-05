@@ -120,6 +120,46 @@ Container@INPUT_PANEL:
 									Height: 16
 									Font: Small
 									Text: label-mouse-control-desc-classic-edgescroll
+						Container@MOUSE_CONTROL_DESC_TOUCH:
+							X: 10
+							Y: 55
+							Width: PARENT_WIDTH
+							Children:
+								LabelWithHighlight@DESC_SELECTION:
+									Width: PARENT_WIDTH
+									Height: 16
+									Font: Small
+									Text: label-mouse-control-desc-touch-selection
+								LabelWithHighlight@DESC_COMMANDS:
+									Y: 17
+									Width: PARENT_WIDTH
+									Height: 16
+									Font: Small
+									Text: label-mouse-control-desc-touch-commands
+								LabelWithHighlight@DESC_DRAGBOX:
+									Y: 34
+									Width: PARENT_WIDTH
+									Height: 16
+									Font: Small
+									Text: label-mouse-control-desc-touch-dragbox
+								LabelWithHighlight@DESC_LONGPRESS:
+									Y: 51
+									Width: PARENT_WIDTH
+									Height: 16
+									Font: Small
+									Text: label-mouse-control-desc-touch-longpress
+								LabelWithHighlight@DESC_PAN:
+									Y: 68
+									Width: PARENT_WIDTH
+									Height: 16
+									Font: Small
+									Text: label-mouse-control-desc-touch-pan
+								LabelWithHighlight@DESC_ZOOM_GESTURE:
+									Y: 85
+									Width: PARENT_WIDTH
+									Height: 16
+									Font: Small
+									Text: label-mouse-control-desc-touch-zoom
 						Container@MOUSE_CONTROL_DESC_OTHERRTS:
 							X: 10
 							Y: 55

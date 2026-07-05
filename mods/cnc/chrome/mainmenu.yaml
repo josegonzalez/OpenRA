@@ -277,3 +277,9 @@ Container@MENU_BACKGROUND:
 			Logic: LoadLocalPlayerProfileLogic
 			X: 31
 			Y: 31
+		DropDownButton@MOD_CHOOSER_BUTTON:
+			X: (WINDOW_WIDTH - WIDTH) / 2
+			Y: 10
+			Width: 200
+			Height: 35
+			Visible: false

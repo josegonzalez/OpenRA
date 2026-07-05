@@ -401,6 +401,11 @@ options-control-scheme =
     .classic = Classic
     .modern = Modern
     .otherrts = Other RTS
+    .touch = Touch
+
+## TouchControlsLogic
+button-touch-controls-assign = Assign
+button-touch-controls-chat = Chat
 
 ## SettingsLogic
 dialog-settings-save =

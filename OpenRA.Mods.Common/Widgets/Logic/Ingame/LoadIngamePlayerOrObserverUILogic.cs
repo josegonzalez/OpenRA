@@ -53,6 +53,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				};
 			}
 
+			if (Game.Settings.Game.UseTouchInput)
+				Game.LoadWidget(world, "TOUCH_CONTROLS", playerRoot, []);
+
 			Game.LoadWidget(world, "DEBUG_WIDGETS", worldRoot, []);
 			Game.LoadWidget(world, "TRANSIENTS_PANEL", worldRoot, []);
 

@@ -122,6 +122,7 @@ ChromeLayout:
 	common|chrome/ingame.yaml
 	common|chrome/ingame-chat.yaml
 	ts|chrome/ingame-transients.yaml
+	common|chrome/ingame-touch.yaml
 	common|chrome/ingame-fmvplayer.yaml
 	common|chrome/ingame-menu.yaml
 	common|chrome/ingame-info.yaml

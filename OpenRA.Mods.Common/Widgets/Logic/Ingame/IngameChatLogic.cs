@@ -20,8 +20,11 @@ using OpenRA.Widgets;
 
 namespace OpenRA.Mods.Common.Widgets.Logic
 {
+	/// <summary>Requests the chat input to open, e.g. from an on-screen touch button.</summary>
+	public sealed record OpenChatNotification;
+
 	[ChromeLogicArgsHotkeys("OpenTeamChat", "OpenGeneralChat")]
-	public class IngameChatLogic : ChromeLogic, INotificationHandler<TextNotification>
+	public class IngameChatLogic : ChromeLogic, INotificationHandler<TextNotification>, INotificationHandler<OpenChatNotification>
 	{
 		[FluentReference]
 		const string TeamChat = "button-team-chat";
@@ -103,6 +106,10 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 			chatChrome = chatPanel.Get<ContainerWidget>("CHAT_CHROME");
 			chatChrome.Visible = true;
+
+			// The soft keyboard covers the bottom of the screen where the chat entry normally lives
+			if (!isMenuChat && Game.Settings.Game.UseTouchInput)
+				chatChrome.Bounds.Y = 8;
 
 			var chatMode = chatChrome.Get<ButtonWidget>("CHAT_MODE");
 			chatMode.GetText = () => teamChat && !disableTeamChat ? teamMessage : allMessage;
@@ -319,6 +326,14 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			chatText.YieldKeyboardFocus();
 			chatOverlay.Visible = true;
 			Ui.ResetTooltips();
+		}
+
+		void INotificationHandler<OpenChatNotification>.Handle(OpenChatNotification notification)
+		{
+			if (isMenuChat || chatChrome.Visible)
+				return;
+
+			OpenChat();
 		}
 
 		void INotificationHandler<TextNotification>.Handle(TextNotification notification)

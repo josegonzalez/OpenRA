@@ -458,7 +458,35 @@ namespace OpenRA
 				}
 			}
 
+			if (Platform.CurrentPlatform == PlatformType.IOS && Settings.Game.TouchDefaultsVersion < 1)
+				ApplyTouchDefaults();
+
+			HideCursor |= Settings.Game.UseTouchInput;
+
 			InitializeMod(manifest, args);
+		}
+
+		/// <summary>One-time settings defaults for touch-first devices, versioned so upgrades can reapply them.</summary>
+		static void ApplyTouchDefaults()
+		{
+			var game = Settings.Game;
+			game.MouseControlStyle = MouseControlStyle.Touch;
+			game.UseTouchInput = true;
+			game.ViewportEdgeScroll = false;
+			game.MouseScroll = MouseScrollType.Disabled;
+			game.TargetLines = TargetLinesType.Automatic;
+			game.StatusBars = StatusBarsType.DamageShow;
+			game.TouchDefaultsVersion = 1;
+
+			// Scale the UI toward comfortable touch target sizes, within the
+			// 1024x720 minimum effective resolution that the chrome layouts support.
+			var resolution = Renderer.NativeResolution;
+			var maxScale = Math.Min(resolution.Width / 1024f, resolution.Height / 720f);
+			var scale = Math.Clamp((float)Math.Floor(20f * maxScale) / 20f, 1f, 1.25f);
+			Settings.Graphics.UIScale = scale;
+			Renderer.SetUIScale(scale);
+
+			Settings.Save();
 		}
 
 		// Set by statically-linked hosts (e.g. iOS) before InitializeAndRun.

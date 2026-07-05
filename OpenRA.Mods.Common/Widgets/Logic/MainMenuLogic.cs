@@ -101,6 +101,43 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 			mainMenu.Get<ButtonWidget>("QUIT_BUTTON").OnClick = Game.Exit;
 
+			// In-process mod switching for installs that bundle multiple mods and
+			// cannot relaunch themselves (e.g. iOS). Hidden when the desktop
+			// external-mod switching mechanism is available.
+			var modChooserButton = widget.GetOrNull<DropDownButtonWidget>("MOD_CHOOSER_BUTTON");
+			if (modChooserButton != null)
+			{
+				var launchableMods = Game.Mods.Values
+					.Where(m => !m.Metadata.Hidden)
+					.OrderBy(m => m.Metadata.Title)
+					.ToList();
+
+				var visible = Game.ExternalMods.Count == 0 && launchableMods.Count > 1;
+				modChooserButton.IsVisible = () => visible && menuType == MenuType.Main;
+
+				var currentTitle = modData.Manifest.Metadata.Title;
+				modChooserButton.GetText = () => currentTitle;
+				modChooserButton.OnMouseDown = _ =>
+				{
+					ScrollItemWidget SetupItem(Manifest mod, ScrollItemWidget itemTemplate)
+					{
+						var item = ScrollItemWidget.Setup(itemTemplate,
+							() => mod.Id == modData.Manifest.Id,
+							() =>
+							{
+								if (mod.Id != modData.Manifest.Id)
+									Game.SwitchToInternalMod(mod.Id);
+							});
+
+						var title = mod.Metadata.Title;
+						item.Get<LabelWidget>("LABEL").GetText = () => title;
+						return item;
+					}
+
+					modChooserButton.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 280, launchableMods, SetupItem);
+				};
+			}
+
 			// Singleplayer menu
 			var singleplayerMenu = widget.Get("SINGLEPLAYER_MENU");
 			singleplayerMenu.IsVisible = () => menuType == MenuType.Singleplayer;
