@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-ios</TargetFramework>
+    <SupportedOSPlatformVersion>17.0</SupportedOSPlatformVersion>
+    <RootNamespace>OpenRA.Platforms.IOS</RootNamespace>
+    <!-- Keep iOS build outputs out of the shared desktop bin directory -->
+    <OutputPath>bin/</OutputPath>
+    <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../OpenRA.Game/OpenRA.Game.csproj" />
+    <PackageReference Include="OpenRA-Freetype6" Version="1.0.11" />
+    <PackageReference Include="OpenRA-OpenAL-CS" Version="1.0.22" />
+    <PackageReference Include="OpenRA-SDL2-CS" Version="1.0.43" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- SDL2/OpenGL platform sources shared with OpenRA.Platforms.Default -->
+    <Compile Include="../OpenRA.Platforms.Default/DummySoundEngine.cs" Link="Shared/DummySoundEngine.cs" />
+    <Compile Include="../OpenRA.Platforms.Default/FrameBuffer.cs" Link="Shared/FrameBuffer.cs" />
+    <Compile Include="../OpenRA.Platforms.Default/FreeTypeFont.cs" Link="Shared/FreeTypeFont.cs" />
+    <Compile Include="../OpenRA.Platforms.Default/GlGraphicsContext.cs" Link="Shared/GlGraphicsContext.cs" />
+    <Compile Include="../OpenRA.Platforms.Default/ISdl2InputWindow.cs" Link="Shared/ISdl2InputWindow.cs" />
+    <Compile Include="../OpenRA.Platforms.Default/ITextureInternal.cs" Link="Shared/ITextureInternal.cs" />
+    <Compile Include="../OpenRA.Platforms.Default/MultiTapDetection.cs" Link="Shared/MultiTapDetection.cs" />
+    <Compile Include="../OpenRA.Platforms.Default/OpenAlSoundEngine.cs" Link="Shared/OpenAlSoundEngine.cs" />
+    <Compile Include="../OpenRA.Platforms.Default/OpenGL.cs" Link="Shared/OpenGL.cs" />
+    <Compile Include="../OpenRA.Platforms.Default/Sdl2Input.cs" Link="Shared/Sdl2Input.cs" />
+    <Compile Include="../OpenRA.Platforms.Default/Shader.cs" Link="Shared/Shader.cs" />
+    <Compile Include="../OpenRA.Platforms.Default/StaticIndexBuffer.cs" Link="Shared/StaticIndexBuffer.cs" />
+    <Compile Include="../OpenRA.Platforms.Default/Texture.cs" Link="Shared/Texture.cs" />
+    <Compile Include="../OpenRA.Platforms.Default/ThreadAffine.cs" Link="Shared/ThreadAffine.cs" />
+    <Compile Include="../OpenRA.Platforms.Default/ThreadedGraphicsContext.cs" Link="Shared/ThreadedGraphicsContext.cs" />
+    <Compile Include="../OpenRA.Platforms.Default/VertexBuffer.cs" Link="Shared/VertexBuffer.cs" />
+  </ItemGroup>
+</Project>

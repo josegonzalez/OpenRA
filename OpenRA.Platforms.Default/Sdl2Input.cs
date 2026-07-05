@@ -40,19 +40,22 @@ namespace OpenRA.Platforms.Default
 				 | ((raw & (int)SDL.SDL_Keymod.KMOD_SHIFT) != 0 ? Modifiers.Shift : 0);
 		}
 
-		static int2 EventPosition(Sdl2PlatformWindow device, int x, int y)
+		static int2 EventPosition(ISdl2InputWindow device, int x, int y)
 		{
+			// macOS and iOS give event positions in point coordinates; everything else uses surface pixels
+			var pointCoordinates = Platform.CurrentPlatform is PlatformType.OSX or PlatformType.IOS;
+
 			// On Windows and Linux (X11) events are given in surface coordinates
 			// These must be scaled to our effective window coordinates
 			// Round fractional components up to avoid rounding small deltas to 0
-			if (Platform.CurrentPlatform != PlatformType.OSX && device.EffectiveWindowSize != device.SurfaceSize)
+			if (!pointCoordinates && device.EffectiveWindowSize != device.SurfaceSize)
 			{
 				var s = 1 / device.EffectiveWindowScale;
 				return new int2((int)(Math.Sign(x) / 2f + x * s), (int)(Math.Sign(x) / 2f + y * s));
 			}
 
-			// On macOS we must still account for the user-requested scale modifier
-			if (Platform.CurrentPlatform == PlatformType.OSX && device.EffectiveWindowScale != device.NativeWindowScale)
+			// On macOS and iOS we must still account for the user-requested scale modifier
+			if (pointCoordinates && device.EffectiveWindowScale != device.NativeWindowScale)
 			{
 				var s = device.NativeWindowScale / device.EffectiveWindowScale;
 				return new int2((int)(Math.Sign(x) / 2f + x * s), (int)(Math.Sign(x) / 2f + y * s));
@@ -61,7 +64,7 @@ namespace OpenRA.Platforms.Default
 			return new int2(x, y);
 		}
 
-		public void PumpInput(Sdl2PlatformWindow device, IInputHandler inputHandler, int2? lockedMousePosition)
+		public void PumpInput(ISdl2InputWindow device, IInputHandler inputHandler, int2? lockedMousePosition)
 		{
 			var mods = MakeModifiers((int)SDL.SDL_GetModState());
 			inputHandler.ModifierKeys(mods);

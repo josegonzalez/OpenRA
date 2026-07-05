@@ -20,7 +20,7 @@ using SDL2;
 
 namespace OpenRA.Platforms.Default
 {
-	sealed class Sdl2PlatformWindow : ThreadAffine, IPlatformWindow
+	sealed class Sdl2PlatformWindow : ThreadAffine, IPlatformWindow, ISdl2InputWindow
 	{
 		readonly Sdl2Input input;
 
@@ -99,6 +99,10 @@ namespace OpenRA.Platforms.Default
 		public bool HasInputFocus { get; internal set; }
 
 		public bool IsSuspended { get; internal set; }
+
+		bool ISdl2InputWindow.HasInputFocus { get => HasInputFocus; set => HasInputFocus = value; }
+		bool ISdl2InputWindow.IsSuspended { get => IsSuspended; set => IsSuspended = value; }
+		void ISdl2InputWindow.WindowSizeChanged() => WindowSizeChanged();
 
 		public GLProfile GLProfile
 		{

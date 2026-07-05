@@ -56,8 +56,13 @@ namespace OpenRA.Platforms.Default
 
 		readonly Dictionary<uint, PoolSlot> sourcePool = new(PoolSize);
 		float volume = 1f;
+#pragma warning disable IDE0032 // The backing field is reassigned during device initialization fallbacks
 		IntPtr device;
+#pragma warning restore IDE0032
 		IntPtr context;
+
+		/// <summary>The ALC device, exposed so platform lifecycle handlers can pause and resume the mixer.</summary>
+		internal IntPtr DeviceHandle => device;
 
 		static string[] QueryDevices(string label, int type)
 		{
