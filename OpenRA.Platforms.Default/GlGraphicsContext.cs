@@ -1,0 +1,276 @@
+#region Copyright & License Information
+/*
+ * Copyright (c) The OpenRA Developers and Contributors
+ * This file is part of OpenRA, which is free software. It is made
+ * available to you under the terms of the GNU General Public License
+ * as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version. For more
+ * information, see COPYING.
+ */
+#endregion
+
+using System;
+using OpenRA.Primitives;
+
+namespace OpenRA.Platforms.Default
+{
+	abstract class GlGraphicsContext : ThreadAffine, IGraphicsContext
+	{
+		protected readonly IPlatformWindow Window;
+
+		protected GlGraphicsContext(IPlatformWindow window)
+		{
+			Window = window;
+		}
+
+		public string GLVersion => OpenGL.Version;
+
+		/// <summary>Bind the GL context to the render thread and initialize the OpenGL bindings and state.</summary>
+		internal abstract void InitializeOpenGL();
+
+		public abstract void Present();
+
+		public abstract void SetVSyncEnabled(bool enabled);
+
+		/// <summary>Shared GL state initialization, run on the render thread once the context is current.</summary>
+		protected static void InitializeGLState()
+		{
+			OpenGL.Initialize();
+			OpenGL.CheckGLError();
+
+			OpenGL.glGenVertexArrays(1, out var vao);
+			OpenGL.CheckGLError();
+			OpenGL.glBindVertexArray(vao);
+			OpenGL.CheckGLError();
+		}
+
+		public IVertexBuffer<T> CreateEmptyVertexBuffer<T>(int size) where T : struct
+		{
+			VerifyThreadAffinity();
+			return new VertexBuffer<T>(size);
+		}
+
+		public IVertexBuffer<T> CreateVertexBuffer<T>(T[] data, bool dynamic = true) where T : struct
+		{
+			VerifyThreadAffinity();
+			return new VertexBuffer<T>(data, dynamic);
+		}
+
+		public IIndexBuffer CreateIndexBuffer(uint[] indices)
+		{
+			VerifyThreadAffinity();
+			return new StaticIndexBuffer(indices);
+		}
+
+		public T[] CreateVertices<T>(int size) where T : struct
+		{
+			VerifyThreadAffinity();
+			return new T[size];
+		}
+
+		public ITexture CreateTexture()
+		{
+			VerifyThreadAffinity();
+			return new Texture();
+		}
+
+		public IFrameBuffer CreateFrameBuffer(Size s)
+		{
+			VerifyThreadAffinity();
+			return new FrameBuffer(s, new Texture(), Color.FromArgb(0));
+		}
+
+		public IFrameBuffer CreateFrameBuffer(Size s, Color clearColor)
+		{
+			VerifyThreadAffinity();
+			return new FrameBuffer(s, new Texture(), clearColor);
+		}
+
+		public IFrameBuffer CreateFrameBuffer(Size s, ITextureInternal texture, Color clearColor)
+		{
+			VerifyThreadAffinity();
+			return new FrameBuffer(s, texture, clearColor);
+		}
+
+		public IShader CreateShader(IShaderBindings bindings)
+		{
+			VerifyThreadAffinity();
+			return new Shader(bindings);
+		}
+
+		public void EnableScissor(int x, int y, int width, int height)
+		{
+			VerifyThreadAffinity();
+
+			if (width < 0)
+				width = 0;
+
+			if (height < 0)
+				height = 0;
+
+			var windowSize = Window.EffectiveWindowSize;
+			var windowScale = Window.EffectiveWindowScale;
+			var surfaceSize = Window.SurfaceSize;
+
+			if (windowSize != surfaceSize)
+			{
+				x = (int)Math.Round(windowScale * x);
+				y = (int)Math.Round(windowScale * y);
+				width = (int)Math.Round(windowScale * width);
+				height = (int)Math.Round(windowScale * height);
+			}
+
+			OpenGL.glScissor(x, y, width, height);
+			OpenGL.CheckGLError();
+			OpenGL.glEnable(OpenGL.GL_SCISSOR_TEST);
+			OpenGL.CheckGLError();
+		}
+
+		public void DisableScissor()
+		{
+			VerifyThreadAffinity();
+			OpenGL.glDisable(OpenGL.GL_SCISSOR_TEST);
+			OpenGL.CheckGLError();
+		}
+
+		static int ModeFromPrimitiveType(PrimitiveType pt)
+		{
+			switch (pt)
+			{
+				case PrimitiveType.PointList: return OpenGL.GL_POINTS;
+				case PrimitiveType.LineList: return OpenGL.GL_LINES;
+				case PrimitiveType.TriangleList: return OpenGL.GL_TRIANGLES;
+			}
+
+			throw new NotImplementedException();
+		}
+
+		public void DrawPrimitives(PrimitiveType pt, int firstVertex, int numVertices)
+		{
+			VerifyThreadAffinity();
+			OpenGL.glDrawArrays(ModeFromPrimitiveType(pt), firstVertex, numVertices);
+			OpenGL.CheckGLError();
+		}
+
+		public void DrawElements(int numIndices, int offset)
+		{
+			VerifyThreadAffinity();
+			OpenGL.glDrawElements(OpenGL.GL_TRIANGLES, numIndices, OpenGL.GL_UNSIGNED_INT, new IntPtr(offset));
+			OpenGL.CheckGLError();
+		}
+
+		public void Clear()
+		{
+			VerifyThreadAffinity();
+			OpenGL.glClearColor(0, 0, 0, 1);
+			OpenGL.CheckGLError();
+			OpenGL.glClear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
+			OpenGL.CheckGLError();
+		}
+
+		/// <summary>Block until all previously submitted GL commands have completed on the GPU.</summary>
+		public void Finish()
+		{
+			VerifyThreadAffinity();
+			OpenGL.glFinish();
+			OpenGL.CheckGLError();
+		}
+
+		public void EnableDepthBuffer()
+		{
+			VerifyThreadAffinity();
+			OpenGL.glClear(OpenGL.GL_DEPTH_BUFFER_BIT);
+			OpenGL.CheckGLError();
+			OpenGL.glEnable(OpenGL.GL_DEPTH_TEST);
+			OpenGL.CheckGLError();
+			OpenGL.glDepthFunc(OpenGL.GL_LEQUAL);
+			OpenGL.CheckGLError();
+		}
+
+		public void DisableDepthBuffer()
+		{
+			VerifyThreadAffinity();
+			OpenGL.glDisable(OpenGL.GL_DEPTH_TEST);
+			OpenGL.CheckGLError();
+		}
+
+		public void ClearDepthBuffer()
+		{
+			VerifyThreadAffinity();
+			OpenGL.glClear(OpenGL.GL_DEPTH_BUFFER_BIT);
+			OpenGL.CheckGLError();
+		}
+
+		public void SetBlendMode(BlendMode mode)
+		{
+			VerifyThreadAffinity();
+			OpenGL.glBlendEquation(OpenGL.GL_FUNC_ADD);
+			OpenGL.CheckGLError();
+
+			switch (mode)
+			{
+				case BlendMode.None:
+					OpenGL.glDisable(OpenGL.GL_BLEND);
+					break;
+				case BlendMode.Alpha:
+					OpenGL.glEnable(OpenGL.GL_BLEND);
+					OpenGL.CheckGLError();
+					OpenGL.glBlendFunc(OpenGL.GL_ONE, OpenGL.GL_ONE_MINUS_SRC_ALPHA);
+					break;
+				case BlendMode.Additive:
+				case BlendMode.Subtractive:
+					OpenGL.glEnable(OpenGL.GL_BLEND);
+					OpenGL.CheckGLError();
+					OpenGL.glBlendFunc(OpenGL.GL_ONE, OpenGL.GL_ONE);
+					if (mode == BlendMode.Subtractive)
+					{
+						OpenGL.CheckGLError();
+						OpenGL.glBlendEquationSeparate(OpenGL.GL_FUNC_REVERSE_SUBTRACT, OpenGL.GL_FUNC_ADD);
+					}
+
+					break;
+				case BlendMode.Multiply:
+					OpenGL.glEnable(OpenGL.GL_BLEND);
+					OpenGL.CheckGLError();
+					OpenGL.glBlendFunc(OpenGL.GL_DST_COLOR, OpenGL.GL_ONE_MINUS_SRC_ALPHA);
+					OpenGL.CheckGLError();
+					break;
+				case BlendMode.Multiplicative:
+					OpenGL.glEnable(OpenGL.GL_BLEND);
+					OpenGL.CheckGLError();
+					OpenGL.glBlendFunc(OpenGL.GL_ZERO, OpenGL.GL_SRC_COLOR);
+					break;
+				case BlendMode.DoubleMultiplicative:
+					OpenGL.glEnable(OpenGL.GL_BLEND);
+					OpenGL.CheckGLError();
+					OpenGL.glBlendFunc(OpenGL.GL_DST_COLOR, OpenGL.GL_SRC_COLOR);
+					break;
+				case BlendMode.LowAdditive:
+					OpenGL.glEnable(OpenGL.GL_BLEND);
+					OpenGL.CheckGLError();
+					OpenGL.glBlendFunc(OpenGL.GL_DST_COLOR, OpenGL.GL_ONE);
+					break;
+				case BlendMode.Screen:
+					OpenGL.glEnable(OpenGL.GL_BLEND);
+					OpenGL.CheckGLError();
+					OpenGL.glBlendFunc(OpenGL.GL_SRC_COLOR, OpenGL.GL_ONE_MINUS_SRC_COLOR);
+					break;
+				case BlendMode.Translucent:
+					OpenGL.glEnable(OpenGL.GL_BLEND);
+					OpenGL.CheckGLError();
+					OpenGL.glBlendFunc(OpenGL.GL_DST_COLOR, OpenGL.GL_ONE_MINUS_DST_COLOR);
+					break;
+			}
+
+			OpenGL.CheckGLError();
+		}
+
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		protected virtual void Dispose(bool disposing) { }
+	}
+}

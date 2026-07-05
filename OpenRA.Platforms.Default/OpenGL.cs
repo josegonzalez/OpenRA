@@ -652,9 +652,23 @@ namespace OpenRA.Platforms.Default
 			}
 		}
 
+		// Contexts that are not created through SDL (e.g. EGL/ANGLE) may
+		// replace this resolver before OpenGL.Initialize is called.
+		public static Func<string, IntPtr> GetProcAddress = SDL.SDL_GL_GetProcAddress;
+
 		static T Bind<T>(string name)
 		{
-			return (T)(object)Marshal.GetDelegateForFunctionPointer(SDL.SDL_GL_GetProcAddress(name), typeof(T));
+			return (T)(object)Marshal.GetDelegateForFunctionPointer(GetProcAddress(name), typeof(T));
+		}
+
+		static bool ExtensionSupported(string extension)
+		{
+			glGetIntegerv(GL_NUM_EXTENSIONS, out var count);
+			for (var i = 0U; i < count; i++)
+				if (glGetStringi(GL_EXTENSIONS, i) == extension)
+					return true;
+
+			return false;
 		}
 
 		public static bool DetectGLFeatures()
@@ -676,13 +690,13 @@ namespace OpenRA.Platforms.Default
 				}
 
 				// Core features are defined as the shared feature set of GL 3.2 and (GLES 3 + derivatives, BGRA extensions)
-				var hasBGRA = SDL.SDL_GL_ExtensionSupported("GL_EXT_texture_format_BGRA8888") == SDL.SDL_bool.SDL_TRUE;
-				var hasDerivatives = SDL.SDL_GL_ExtensionSupported("GL_OES_standard_derivatives") == SDL.SDL_bool.SDL_TRUE;
+				var hasBGRA = ExtensionSupported("GL_EXT_texture_format_BGRA8888");
+				var hasDerivatives = ExtensionSupported("GL_OES_standard_derivatives");
 				if (Version.Contains(" ES") && hasBGRA && hasDerivatives && major >= 3)
 				{
 					hasValidConfiguration = true;
 					Profile = GLProfile.Embedded;
-					if (SDL.SDL_GL_ExtensionSupported("GL_EXT_read_format_bgra") == SDL.SDL_bool.SDL_TRUE)
+					if (ExtensionSupported("GL_EXT_read_format_bgra"))
 						Features |= GLFeatures.ESReadFormatBGRA;
 				}
 				else if (major > 3 || (major == 3 && minor >= 2))
@@ -692,8 +706,7 @@ namespace OpenRA.Platforms.Default
 				}
 
 				// Debug callbacks were introduced in GL 4.3
-				var hasDebugMessagesCallback = SDL.SDL_GL_ExtensionSupported("GL_KHR_debug") == SDL.SDL_bool.SDL_TRUE;
-				if (hasDebugMessagesCallback)
+				if (ExtensionSupported("GL_KHR_debug"))
 					Features |= GLFeatures.DebugMessagesCallback;
 			}
 			catch (Exception) { }

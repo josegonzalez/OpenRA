@@ -36,6 +36,7 @@ namespace OpenRA.Platforms.Default
 
 		// Delegates that perform actions on the real device.
 		Func<object> doClear;
+		Func<object> doFinish;
 		Action doClearDepthBuffer;
 		Action doDisableDepthBuffer;
 		Action doEnableDepthBuffer;
@@ -54,7 +55,7 @@ namespace OpenRA.Platforms.Default
 		Action<object> doSetBlendMode;
 		Action<object> doSetVSync;
 
-		public ThreadedGraphicsContext(Sdl2GraphicsContext context, int vertexBatchSize, int indexBatchSize)
+		public ThreadedGraphicsContext(GlGraphicsContext context, int vertexBatchSize, int indexBatchSize)
 		{
 			VertexBatchSize = vertexBatchSize;
 			IndexBatchSize = indexBatchSize;
@@ -74,7 +75,7 @@ namespace OpenRA.Platforms.Default
 
 		void RenderThread(object contextObject)
 		{
-			using (var context = (Sdl2GraphicsContext)contextObject)
+			using (var context = (GlGraphicsContext)contextObject)
 			{
 				// This lock allows the constructor to block until initialization completes.
 				lock (syncObject)
@@ -82,6 +83,7 @@ namespace OpenRA.Platforms.Default
 					context.InitializeOpenGL();
 
 					doClear = () => { context.Clear(); return null; };
+					doFinish = () => { context.Finish(); return null; };
 					doClearDepthBuffer = context.ClearDepthBuffer;
 					doDisableDepthBuffer = context.DisableDepthBuffer;
 					doEnableDepthBuffer = context.EnableDepthBuffer;
@@ -414,6 +416,15 @@ namespace OpenRA.Platforms.Default
 			// This ensures all previous messages have been processed before we return.
 			// This prevents us from queuing up work faster than it can be processed if rendering is behind.
 			Send(doClear);
+		}
+
+		/// <summary>
+		/// Drain the message queue and block until the GPU has completed all submitted work.
+		/// Used to quiesce rendering before the application is suspended.
+		/// </summary>
+		public void Finish()
+		{
+			Send(doFinish);
 		}
 
 		public void ClearDepthBuffer()
