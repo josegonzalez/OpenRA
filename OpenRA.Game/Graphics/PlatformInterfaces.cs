@@ -71,6 +71,13 @@ namespace OpenRA
 		void GrabWindowMouseFocus();
 		void ReleaseWindowMouseFocus();
 
+		void StartTextInput();
+		void StopTextInput();
+
+		/// <summary>Focused text widget bounds in effective window units, used to position IMEs and soft keyboards.</summary>
+		void SetTextInputRect(Rectangle rect);
+		bool IsTextInputActive { get; }
+
 		IHardwareCursor CreateHardwareCursor(string name, Size size, byte[] data, int2 hotspot, bool pixelDouble);
 		void SetHardwareCursor(IHardwareCursor cursor);
 		void SetWindowTitle(string title);

@@ -521,6 +521,23 @@ namespace OpenRA
 			Window.ReleaseWindowMouseFocus();
 		}
 
+		public void StartTextInput()
+		{
+			Window.StartTextInput();
+		}
+
+		public void StopTextInput()
+		{
+			Window.StopTextInput();
+		}
+
+		public void SetTextInputRect(Rectangle rect)
+		{
+			Window.SetTextInputRect(rect);
+		}
+
+		public bool IsTextInputActive => Window.IsTextInputActive;
+
 		public void SaveScreenshot(string path)
 		{
 			// Pull the data from the Texture directly to prevent the sheet from buffering it

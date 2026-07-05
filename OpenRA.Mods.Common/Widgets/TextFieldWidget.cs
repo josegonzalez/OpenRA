@@ -93,9 +93,21 @@ namespace OpenRA.Mods.Common.Widgets
 			VisualHeight = widget.VisualHeight;
 		}
 
+		public override bool TakeKeyboardFocus()
+		{
+			if (!base.TakeKeyboardFocus())
+				return false;
+
+			// Summon IMEs and soft keyboards while a text widget is focused
+			Game.Renderer?.StartTextInput();
+			Game.Renderer?.SetTextInputRect(RenderBounds);
+			return true;
+		}
+
 		public override bool YieldKeyboardFocus()
 		{
 			OnLoseFocus();
+			Game.Renderer?.StopTextInput();
 			return base.YieldKeyboardFocus();
 		}
 

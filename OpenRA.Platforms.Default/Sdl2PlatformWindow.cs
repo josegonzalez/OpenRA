@@ -492,6 +492,48 @@ namespace OpenRA.Platforms.Default
 			SDL.SDL_SetWindowGrab(Window, SDL.SDL_bool.SDL_FALSE);
 		}
 
+		public void StartTextInput()
+		{
+			VerifyThreadAffinity();
+			SDL.SDL_StartTextInput();
+		}
+
+		public void StopTextInput()
+		{
+			VerifyThreadAffinity();
+			SDL.SDL_StopTextInput();
+		}
+
+		public void SetTextInputRect(Rectangle rect)
+		{
+			VerifyThreadAffinity();
+
+			// SDL expects the rect in window coordinates: invert the scaling
+			// that Sdl2Input.EventPosition applies to incoming event positions.
+			var s = Platform.CurrentPlatform == PlatformType.OSX
+				? EffectiveWindowScale / NativeWindowScale
+				: EffectiveWindowScale;
+
+			var sdlRect = new SDL.SDL_Rect
+			{
+				x = (int)(rect.X * s),
+				y = (int)(rect.Y * s),
+				w = (int)(rect.Width * s),
+				h = (int)(rect.Height * s)
+			};
+
+			SDL.SDL_SetTextInputRect(ref sdlRect);
+		}
+
+		public bool IsTextInputActive
+		{
+			get
+			{
+				VerifyThreadAffinity();
+				return SDL.SDL_IsTextInputActive() == SDL.SDL_bool.SDL_TRUE;
+			}
+		}
+
 		public void PumpInput(IInputHandler inputHandler)
 		{
 			VerifyThreadAffinity();
