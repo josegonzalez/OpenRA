@@ -15,14 +15,16 @@ using NUnit.Framework;
 
 namespace OpenRA.Test
 {
-	sealed class MouseEventRecorder : IInputHandler
+	sealed class MouseEventRecorder : IInputHandler, IGestureHandler
 	{
 		public readonly List<MouseInput> Events = [];
+		public readonly List<GestureInput> Gestures = [];
 
 		public void ModifierKeys(Modifiers mods) { }
 		public void OnKeyInput(KeyInput input) { }
 		public void OnTextInput(string text) { }
 		public void OnMouseInput(MouseInput input) { Events.Add(input); }
+		public void OnGestureInput(GestureInput input) { Gestures.Add(input); }
 	}
 
 	[TestFixture]
@@ -130,6 +132,60 @@ namespace OpenRA.Test
 			Touch(TouchInputEvent.Down, 3, new int2(50, 50), 200);
 			Touch(TouchInputEvent.Up, 3, new int2(50, 50), 260);
 			Assert.That(recorder.Events, Has.Count.EqualTo(3));
+		}
+
+		[TestCase(TestName = "Two fingers moving together emit pan updates with the centroid delta.")]
+		public void TwoFingerPanEmitsCentroidDelta()
+		{
+			Touch(TouchInputEvent.Down, 1, new int2(100, 100), 0);
+			Touch(TouchInputEvent.Down, 2, new int2(200, 100), 20);
+
+			Assert.That(recorder.Gestures, Has.Count.EqualTo(1));
+			Assert.That(recorder.Gestures[0].Type, Is.EqualTo(GestureType.TwoFingerBegin));
+			Assert.That(recorder.Gestures[0].Location, Is.EqualTo(new int2(150, 100)));
+
+			// Both fingers translate by (20, 30): centroid moves in two steps
+			Touch(TouchInputEvent.Move, 1, new int2(120, 130), 40);
+			Touch(TouchInputEvent.Move, 2, new int2(220, 130), 45);
+
+			var updates = recorder.Gestures.Skip(1).ToArray();
+			Assert.That(updates.Select(g => g.Type), Is.All.EqualTo(GestureType.TwoFingerUpdate));
+			var total = updates.Aggregate(int2.Zero, (acc, g) => acc + g.Delta);
+			Assert.That(total, Is.EqualTo(new int2(20, 30)));
+			Assert.That(updates.Sum(g => g.ZoomDelta), Is.EqualTo(0f).Within(1e-4), "A pure translation must not zoom");
+
+			Touch(TouchInputEvent.Up, 1, new int2(120, 130), 80);
+			Assert.That(recorder.Gestures[^1].Type, Is.EqualTo(GestureType.TwoFingerEnd));
+			Assert.That(recorder.Events, Is.Empty, "Gestures must not synthesize mouse events");
+		}
+
+		[TestCase(TestName = "Spreading two fingers emits the log of the pinch ratio as the zoom delta.")]
+		public void PinchEmitsLogZoomDelta()
+		{
+			Touch(TouchInputEvent.Down, 1, new int2(100, 100), 0);
+			Touch(TouchInputEvent.Down, 2, new int2(200, 100), 20);
+
+			// Distance doubles from 100 to 200 around the same centroid
+			Touch(TouchInputEvent.Move, 1, new int2(50, 100), 40);
+			Touch(TouchInputEvent.Move, 2, new int2(250, 100), 45);
+
+			var zoom = recorder.Gestures.Where(g => g.Type == GestureType.TwoFingerUpdate).Sum(g => g.ZoomDelta);
+			Assert.That(zoom, Is.EqualTo(System.MathF.Log(2f)).Within(1e-4));
+		}
+
+		[TestCase(TestName = "The finger surviving a two-finger gesture does not become a phantom tap.")]
+		public void SurvivingFingerIsNotAPhantomTap()
+		{
+			Touch(TouchInputEvent.Down, 1, new int2(100, 100), 0);
+			Touch(TouchInputEvent.Down, 2, new int2(200, 100), 20);
+			Touch(TouchInputEvent.Up, 2, new int2(200, 100), 50);
+
+			Assert.That(recorder.Gestures[^1].Type, Is.EqualTo(GestureType.TwoFingerEnd));
+
+			Touch(TouchInputEvent.Move, 1, new int2(150, 150), 80);
+			Touch(TouchInputEvent.Up, 1, new int2(150, 150), 120);
+
+			Assert.That(recorder.Events, Is.Empty);
 		}
 
 		[TestCase(TestName = "The recognizer recovers when the active finger lifts before the second finger.")]

@@ -22,7 +22,7 @@ namespace OpenRA
 		public void OnMouseInput(MouseInput input) { }
 	}
 
-	public class DefaultInputHandler : IInputHandler
+	public class DefaultInputHandler : IInputHandler, IGestureHandler
 	{
 		readonly World world;
 		public DefaultInputHandler(World world)
@@ -54,6 +54,11 @@ namespace OpenRA
 		{
 			// The recognizer synthesizes mouse events back through OnMouseInput
 			Game.TouchGestures.Process(input, Game.RunTime, this);
+		}
+
+		public void OnGestureInput(GestureInput input)
+		{
+			Sync.RunUnsynced(world, () => Ui.HandleGesture(input));
 		}
 	}
 }

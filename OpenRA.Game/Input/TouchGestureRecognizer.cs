@@ -18,12 +18,13 @@ namespace OpenRA
 	/// Translates raw touch events into the mouse events that the widget and order
 	/// systems consume: a tap becomes a left click, a drag becomes a left-button drag
 	/// (selection box), and a long-press becomes a right click (contextual/cancel).
-	/// The first press is deferred until it can be disambiguated, so no events leak
-	/// out of gestures that turn out to be something else.
+	/// Two fingers become a pan/pinch gesture. The first press is deferred until it
+	/// can be disambiguated, so no events leak out of gestures that turn out to be
+	/// something else.
 	/// </summary>
 	public sealed class TouchGestureRecognizer
 	{
-		enum GestureState { Idle, TouchPending, DragActive, LongPressFired, IgnoreUntilAllUp }
+		enum GestureState { Idle, TouchPending, DragActive, LongPressFired, TwoFingerActive, IgnoreUntilAllUp }
 
 		/// <summary>Maximum finger travel in effective window units before a press becomes a drag.</summary>
 		const int TapSlop = 12;
@@ -42,6 +43,13 @@ namespace OpenRA
 		long downTime;
 		Modifiers lastModifiers;
 
+		// Two-finger gesture tracking
+		long secondFinger;
+		int2 firstFingerPosition;
+		int2 secondFingerPosition;
+		int2 lastCentroid;
+		float lastFingerDistance;
+
 		// Release history for multi-tap detection. The sentinel is old enough to never
 		// match a real release but small enough to avoid arithmetic overflow.
 		(long Time, int2 Location) previousRelease = (-MultiTapDurationMs, int2.Zero);
@@ -57,7 +65,7 @@ namespace OpenRA
 			switch (touch.Event)
 			{
 				case TouchInputEvent.Down:
-					OnFingerDown(touch, now);
+					OnFingerDown(touch, now, handler);
 					break;
 				case TouchInputEvent.Move:
 					OnFingerMove(touch, handler);
@@ -83,7 +91,7 @@ namespace OpenRA
 			EmitMouse(handler, MouseInputEvent.Up, MouseButton.Right, lastPosition, 1);
 		}
 
-		void OnFingerDown(TouchInput touch, long now)
+		void OnFingerDown(TouchInput touch, long now, IInputHandler handler)
 		{
 			fingersDown.Add(touch.FingerId);
 			lastModifiers = touch.Modifiers;
@@ -98,19 +106,55 @@ namespace OpenRA
 					break;
 
 				case GestureState.TouchPending:
-					// A second finger before the press was disambiguated: this is not a tap,
-					// drag, or long-press, and no mouse events have been emitted yet.
-					state = GestureState.IgnoreUntilAllUp;
+					// A second finger before the press was disambiguated starts a two-finger
+					// pan/pinch gesture. No mouse events have been emitted yet.
+					state = GestureState.TwoFingerActive;
+					secondFinger = touch.FingerId;
+					firstFingerPosition = lastPosition;
+					secondFingerPosition = touch.Location;
+					lastCentroid = (firstFingerPosition + secondFingerPosition) / 2;
+					lastFingerDistance = Distance(firstFingerPosition, secondFingerPosition);
+					EmitGesture(handler, GestureType.TwoFingerBegin, lastCentroid, int2.Zero, 0f);
 					break;
 
 				default:
-					// Extra fingers never interrupt an active drag or an already-fired press
+					// Extra fingers never interrupt an active drag, gesture, or already-fired press
 					break;
 			}
 		}
 
+		static float Distance(int2 a, int2 b)
+		{
+			float dx = a.X - b.X;
+			float dy = a.Y - b.Y;
+			return MathF.Sqrt(dx * dx + dy * dy);
+		}
+
 		void OnFingerMove(TouchInput touch, IInputHandler handler)
 		{
+			if (state == GestureState.TwoFingerActive)
+			{
+				if (touch.FingerId == activeFinger)
+					firstFingerPosition = touch.Location;
+				else if (touch.FingerId == secondFinger)
+					secondFingerPosition = touch.Location;
+				else
+					return;
+
+				var centroid = (firstFingerPosition + secondFingerPosition) / 2;
+				var distance = Distance(firstFingerPosition, secondFingerPosition);
+
+				// Pan and pinch are not mutually exclusive: both apply every update,
+				// which keeps the world glued to the fingers.
+				var zoomDelta = distance > float.Epsilon && lastFingerDistance > float.Epsilon
+					? MathF.Log(distance / lastFingerDistance) : 0f;
+
+				EmitGesture(handler, GestureType.TwoFingerUpdate, centroid, centroid - lastCentroid, zoomDelta);
+				lastCentroid = centroid;
+				lastFingerDistance = distance;
+				return;
+			}
+
 			if (touch.FingerId != activeFinger)
 				return;
 
@@ -145,6 +189,20 @@ namespace OpenRA
 		void OnFingerUp(TouchInput touch, long now, IInputHandler handler, bool cancelled)
 		{
 			fingersDown.Remove(touch.FingerId);
+
+			if (state == GestureState.TwoFingerActive)
+			{
+				// Either tracked finger ends the gesture; the survivor must not become a phantom tap
+				if (touch.FingerId == activeFinger || touch.FingerId == secondFinger)
+				{
+					EmitGesture(handler, GestureType.TwoFingerEnd, lastCentroid, int2.Zero, 0f);
+					state = fingersDown.Count > 0 ? GestureState.IgnoreUntilAllUp : GestureState.Idle;
+				}
+				else if (fingersDown.Count == 0)
+					state = GestureState.Idle;
+
+				return;
+			}
 
 			if (touch.FingerId != activeFinger)
 			{
@@ -199,6 +257,11 @@ namespace OpenRA
 		void EmitMouse(IInputHandler handler, MouseInputEvent e, MouseButton button, int2 location, int tapCount, int2 delta = default)
 		{
 			handler.OnMouseInput(new MouseInput(e, button, location, delta, lastModifiers, tapCount));
+		}
+
+		static void EmitGesture(IInputHandler handler, GestureType type, int2 location, int2 delta, float zoomDelta)
+		{
+			(handler as IGestureHandler)?.OnGestureInput(new GestureInput(type, location, delta, zoomDelta));
 		}
 	}
 }

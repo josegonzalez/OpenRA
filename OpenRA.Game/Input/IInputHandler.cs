@@ -33,6 +33,24 @@ namespace OpenRA
 	/// <summary>A raw finger contact. Location and Delta are in effective window coordinates.</summary>
 	public record struct TouchInput(TouchInputEvent Event, long FingerId, int2 Location, int2 Delta, Modifiers Modifiers);
 
+	public enum GestureType { TwoFingerBegin, TwoFingerUpdate, TwoFingerEnd }
+
+	/// <summary>
+	/// A recognized two-finger gesture. Location is the finger centroid in effective window
+	/// coordinates, Delta is the centroid movement since the last event, and ZoomDelta is the
+	/// natural logarithm of the pinch ratio, matching the Viewport.AdjustZoom convention.
+	/// </summary>
+	public record struct GestureInput(GestureType Type, int2 Location, int2 Delta, float ZoomDelta);
+
+	/// <summary>
+	/// Routes gestures recognized from touch input. This is separate from IInputHandler
+	/// because gestures are synthesized inside the game and never cross the platform boundary.
+	/// </summary>
+	public interface IGestureHandler
+	{
+		void OnGestureInput(GestureInput input);
+	}
+
 	[Flags]
 	public enum MouseButton
 	{

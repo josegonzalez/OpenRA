@@ -146,6 +146,14 @@ namespace OpenRA.Widgets
 			return handled;
 		}
 
+		public static bool HandleGesture(GestureInput gi)
+		{
+			if (MouseFocusWidget != null && MouseFocusWidget.HandleGestureOuter(gi))
+				return true;
+
+			return Root.HandleGestureOuter(gi);
+		}
+
 		/// <summary>Possibly handle keyboard input (if this widget has keyboard focus).</summary>
 		/// <returns><c>true</c>, if keyboard input was handled, <c>false</c> if the input should bubble to the parent widget.</returns>
 		/// <param name="e">Key input data.</param>
@@ -454,6 +462,25 @@ namespace OpenRA.Widgets
 				Ui.MouseOverWidget = this;
 
 			return HandleMouseInput(mi);
+		}
+
+		/// <summary>Possibly handles a recognized touch gesture (two-finger pan/pinch).</summary>
+		/// <returns><c>true</c>, if the gesture was handled, <c>false</c> if it should bubble to the parent widget.</returns>
+		public virtual bool HandleGesture(GestureInput gi) { return false; }
+
+		public bool HandleGestureOuter(GestureInput gi)
+		{
+			// Are we able to handle this event?
+			if (!(HasMouseFocus || (IsVisible() && EventBoundsContains(gi.Location))))
+				return false;
+
+			// Send the event to the deepest children first and bubble up if unhandled
+			// PERF: Avoid LINQ.
+			for (var i = Children.Count - 1; i >= 0; --i)
+				if (Children[i].HandleGestureOuter(gi))
+					return true;
+
+			return HandleGesture(gi);
 		}
 
 		public virtual bool HandleKeyPress(KeyInput e) { return false; }

@@ -384,6 +384,20 @@ namespace OpenRA.Mods.Common.Widgets
 			return IsJoystickScrolling || isStandardScrolling;
 		}
 
+		public override bool HandleGesture(GestureInput gi)
+		{
+			if (gi.Type == GestureType.TwoFingerUpdate)
+			{
+				if (gi.Delta != int2.Zero)
+					worldRenderer.Viewport.Scroll(-gi.Delta, false);
+
+				if (gi.ZoomDelta != 0f)
+					worldRenderer.Viewport.AdjustZoom(gi.ZoomDelta, gi.Location);
+			}
+
+			return true;
+		}
+
 		public override bool YieldMouseFocus(MouseInput mi)
 		{
 			joystickScrollStart = joystickScrollEnd = null;
