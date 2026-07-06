@@ -10,6 +10,7 @@
 #endregion
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using AVFoundation;
 
@@ -19,6 +20,8 @@ namespace OpenRA.Platforms.IOS
 	/// Configures the AVAudioSession for the OpenAL device and pauses the
 	/// mixer while the application is backgrounded or interrupted.
 	/// </summary>
+	[SuppressMessage("Style", "IDE1006:Naming Styles",
+		Justification = "C-style naming is kept for consistency with the underlying native API.")]
 	static class IOSAudioSession
 	{
 		[DllImport("soft_oal", CallingConvention = CallingConvention.Cdecl)]

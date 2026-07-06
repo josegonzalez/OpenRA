@@ -15,7 +15,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using Foundation;
 using ObjCRuntime;
-using OpenRA;
 using OpenRA.Platforms.IOS;
 using SDL2;
 

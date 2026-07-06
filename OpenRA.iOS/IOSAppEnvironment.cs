@@ -12,7 +12,6 @@
 using System;
 using System.IO;
 using Foundation;
-using OpenRA;
 
 namespace OpenRA.iOS
 {

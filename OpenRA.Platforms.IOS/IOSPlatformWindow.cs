@@ -36,7 +36,7 @@ namespace OpenRA.Platforms.IOS
 		readonly ThreadedGraphicsContext threadedContext;
 		readonly Size windowSize;
 		Size surfaceSize;
-		float windowScale;
+		readonly float windowScale;
 		float scaleModifier;
 		bool disposed;
 
